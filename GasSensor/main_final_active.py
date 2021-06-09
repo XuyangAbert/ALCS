@@ -169,7 +169,7 @@ def StdUpdate(Std,PreStd,BufferSize):
 def CCA(sample,stdData,Dist):
     m = 1
     gamma = 5
-    ep = 0.985 # 0.998
+    ep = 0.998 # 0.998
     N = np.shape(sample)[0]
     while 1:
         den1 = []
@@ -664,7 +664,7 @@ def Cluster_Assign(sample,P):
 if __name__ == '__main__':
     [data,label] = Input()
     
-    label_ratiovalues = [0.05,0.10,0.15,0.20,0.25,0.30]
+    label_ratiovalues = [0.10]
     Result1 = {}
     Result2 = {}
     
@@ -842,7 +842,7 @@ if __name__ == '__main__':
         new_fetchX = sample_Fetch
         new_fetchY = label_Fetch
     
-        clf1 = KNeighborsClassifier(n_neighbors=3)
+        clf1 = KNeighborsClassifier(n_neighbors=5)
         clf3 = LinearSVC()
     
         clf1 = clf1.fit(new_fetchX, new_fetchY)
