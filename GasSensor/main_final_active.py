@@ -738,45 +738,6 @@ if __name__ == '__main__':
         FetchIndex = []
         UnlabeledIndex = []
         InterDist = squareform(pdist(P))
-#        for i in range(np.shape(P)[0]):
-#            tempcluster = np.where(ClusterIndice==(i))
-#            d1 = []
-#            temp_interdist = InterDist[i,:]
-#            temp_rank = np.argsort(temp_interdist)
-#            temp_neigh1 = P[temp_rank[0],:]
-#            temp_neigh2 = P[temp_rank[1],:]
-#            for j in range(len(tempcluster[0])):
-#                d1.append(np.linalg.norm(AccSample[tempcluster[0][j],:]-P[i,:]))
-#            fetchSize = num_S * len(d1)/np.shape(AccSample)[0]
-#            sortIndex1 = np.argsort(d1)
-#            fet1 = tempcluster[0][sortIndex1[:round(fetchSize*0.5)]]
-#            fet1 = fet1.astype(int)
-#            fil_index = sortIndex1[-round(len(d1)/2):]
-#            d2 = []
-#            for k in range(len(fil_index)):
-#                temp_d1 = np.linalg.norm(AccSample[tempcluster[0][fil_index[k]],:]-temp_neigh1)
-#                temp_d2 = np.linalg.norm(AccSample[tempcluster[0][fil_index[k]],:]-temp_neigh2)
-#                temp_ratio1 = max(temp_d1,temp_d2)/min(temp_d1,temp_d2)
-#                temp_ratio2 = (temp_d1+temp_d2)/np.linalg.norm(temp_neigh1-temp_neigh2)
-#                d2.append(temp_ratio1)
-#        
-#            sortIndex2 = np.argsort(d2)
-#            candidate_fet2 = fil_index[sortIndex2[:round(fetchSize*0.8)]]
-#            sum_dist = []
-#            for ii in range(len(candidate_fet2)):
-#                candidate_d1=np.linalg.norm(AccSample[tempcluster[0][candidate_fet2[ii]],:]-temp_neigh1)
-#                candidate_d2=np.linalg.norm(AccSample[tempcluster[0][candidate_fet2[ii]],:]-temp_neigh1)
-#                sum_dist.append(candidate_d1+candidate_d2)
-#                
-#            sortIndex3 = np.argsort(sum_dist)
-#            fet2 = tempcluster[0][candidate_fet2[sortIndex3[:round(fetchSize*0.5)]]]
-#            fet2 = fet2.astype(int)
-#                
-#            FetchIndex = np.append(FetchIndex,fet1)
-#            FetchIndex = np.append(FetchIndex,fet2)  
-#            UnlabeledIndex = np.append(UnlabeledIndex,tempcluster[0][sortIndex1[round(fetchSize*0.5):round(len(d1)/2)]])
-#            UnlabeledIndex = np.append(UnlabeledIndex,tempcluster[0][fil_index[sortIndex2[round(fetchSize*0.5):len(d2)]]])
-        
         for i in range(np.shape(P)[0]):
             tempcluster = np.where(ClusterIndice==(i))
             d1 = []
