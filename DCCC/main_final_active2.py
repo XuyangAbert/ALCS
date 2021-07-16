@@ -883,8 +883,8 @@ if __name__ == '__main__':
         Result2[str(label_ratiovalues[it])] = temp_result2 
 
     print("-----------------Results-------------------")
-    print("Results for KNN from 5% to 30%:", Result1)
-    print("Results for SVM from 5% to 30%:", Result2)
+    print("Results for KNN:", Result1)
+    print("Results for SVM:", Result2)
     end = time.time()
     ExecutionTime = end - start
     print('The total Extection Time: ' + str(ExecutionTime))
