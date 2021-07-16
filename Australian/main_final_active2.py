@@ -629,7 +629,7 @@ def DiversityFetch2(candidate_fet2, current, priority2, interd1, dth, fetchsize)
 #---------------------------Main Function-------------------------#
 if __name__ == '__main__':
     [data,label] = Input()
-    
+    # Specify the label ratio here
     label_ratiovalues = [0.10]
     Result1 = {}
     Result2 = {}
