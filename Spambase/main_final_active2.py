@@ -726,7 +726,8 @@ if __name__ == '__main__':
                 sortIndex3 = np.argsort(sum_dist)
                 sortIndex3 = sortIndex3[::-1]
                 sum_dist = np.asarray(sum_dist)
-                fet2 = DiversityFetch2(candidate_fet2, tempcluster[0], sum_dist, interd1, dth, round(fetchSize*0.5))
+                fet2 = tempcluster[0][candidate_fet2[sortIndex3[:int(round(fetchSize*0.5))]]]
+                fet2 = fet2.astype(int)
                 FetchIndex = np.append(FetchIndex,fet1)
                 FetchIndex = np.append(FetchIndex,fet2)  
         sample_index = np.arange(0, np.shape(AccSample)[0])
