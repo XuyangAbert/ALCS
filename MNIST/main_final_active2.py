@@ -695,70 +695,69 @@ def DiversityFetch2(candidate_fet2, current, priority2, interd1, dth, fetchsize)
 #---------------------------Main Function-------------------------#
 if __name__ == '__main__':
     [data,label] = Input()
-    # Specify the label ratio here
-    label_ratiovalues = [0.1]
+    
+    label_ratiovalues = [0.10]
     Result1 = {}
     Result2 = {}
     
+    [BufferSize,P_Summary,T,PFS,PreStd] = ParamSpe(data)
+    T = int(T)
+    gammaHist = []
+    PFS = []
+    PreMu = []
+    for t in range(T):
+        if t < T-1:
+            sample = data[t*BufferSize:(t+1)*BufferSize,:]
+        else:
+            sample = data[t*BufferSize:np.shape(data)[0]]
+        if t==0:
+            AccSample = sample
+        else:
+            AccSample = np.concatenate([AccSample,sample])
+            
+        dim = np.shape(sample)[1]
+        [stdData,pop_index,pop,radius,PreMu,PreStd] = PopInitial(sample,PreMu,PreStd,BufferSize)
+        # Initialize the fitness vector
+        fitness = np.zeros((len(pop_index),1))
+        # Initialize the indices vector
+        indices = np.zeros((len(pop_index),1))
+        Dist = Distance_Cal(sample)
+        if PreStd:
+            if PreStd[len(PreStd)-1] > stdData:
+                P = P_Summary[:,0:dim]
+                localFit = Fitness_Cal(sample,P,stdData,gamma)
+                PF = fitness_update(P_Summary,P,localFit,PreStd,gamma,stdData)
+                P_Summary = ClusterSummary(P,PF,P_Summary,sample)
+                PFS.append(PF)
+                PreStd.append(stdData)
+                clustercenter = P
+                [Assign,clusterindex] = Cluster_Assign(AccSample,P)
+                continue
+        else:
+            gamma = CCA(sample,stdData,Dist)
+                
+        gammaHist.append(gamma)
+        fitness = Fitness_Cal(sample,pop,stdData,gamma)
+        fitness = np.array(fitness)
+        P, P_fitness, TPC_Indice, PeakIndices = TPC_Search(Dist,pop_index,pop,radius,fitness)
+        P, P_fitness = CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices)
+            
+        P_fitness = Fitness_Cal(sample,P,stdData,gamma)
+        P_fitness = fitness_update(P_Summary,P,P_fitness,PreStd,gamma,stdData)
+            
+        if t == 0:
+            P = P
+            PF = np.asarray(P_fitness)
+        else:
+            P,P_fitness = CE_Online(sample,P_Summary,P,P_fitness,stdData,gamma,PreStd)
+            PF = np.asarray(P_fitness)
+            
+        P_Summary = ClusterSummary(P,PF,P_Summary,sample)
+        PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
+        [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
+    
     for it in range(len(label_ratiovalues)):
         label_ratio = label_ratiovalues[it]
-        [BufferSize,P_Summary,T,PFS,PreStd] = ParamSpe(data)
-        T = int(T)
-        gammaHist = []
-        PFS = []
-        PreMu = []
-        for t in range(T):
-            
-            if t < T-1:
-                sample = data[t*BufferSize:(t+1)*BufferSize,:]
-            else:
-                sample = data[t*BufferSize:np.shape(data)[0]]
-            if t==0:
-                AccSample = sample
-            else:
-                AccSample = np.concatenate([AccSample,sample])
-            
-            dim = np.shape(sample)[1]
-            [stdData,pop_index,pop,radius,PreMu,PreStd] = PopInitial(sample,PreMu,PreStd,BufferSize)
-            # Initialize the fitness vector
-            fitness = np.zeros((len(pop_index),1))
-            # Initialize the indices vector
-            indices = np.zeros((len(pop_index),1))
-            Dist = Distance_Cal(sample)
-            if PreStd:
-                if PreStd[len(PreStd)-1] > stdData:
-                    P = P_Summary[:,0:dim]
-                    localFit = Fitness_Cal(sample,P,stdData,gamma)
-                    PF = fitness_update(P_Summary,P,localFit,PreStd,gamma,stdData)
-                    P_Summary = ClusterSummary(P,PF,P_Summary,sample)
-                    PFS.append(PF)
-                    PreStd.append(stdData)
-                    clustercenter = P
-                    [Assign,clusterindex] = Cluster_Assign(AccSample,P)
-                    continue
-            else:
-                gamma = CCA(sample,stdData,Dist)
-                
-            gammaHist.append(gamma)
-            fitness = Fitness_Cal(sample,pop,stdData,gamma)
-            fitness = np.array(fitness)
-            P, P_fitness, TPC_Indice, PeakIndices = TPC_Search(Dist,pop_index,pop,radius,fitness)
-            P, P_fitness = CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices)
-            
-            P_fitness = Fitness_Cal(sample,P,stdData,gamma)
-            P_fitness = fitness_update(P_Summary,P,P_fitness,PreStd,gamma,stdData)
-            
-            if t == 0:
-                P = P
-                PF = np.asarray(P_fitness)
-            else:
-                P,P_fitness = CE_Online(sample,P_Summary,P,P_fitness,stdData,gamma,PreStd)
-                PF = np.asarray(P_fitness)
-            
-            P_Summary = ClusterSummary(P,PF,P_Summary,sample)
-            PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
-        
-        [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
         sample_size = np.shape(AccSample)[0]
         num_S = round(label_ratio*sample_size)
 #        num_S = round((np.shape(P)[0]*sample_size)**0.5)
@@ -838,9 +837,9 @@ if __name__ == '__main__':
                 sortIndex3 = np.argsort(sum_dist)
                 sortIndex3 = sortIndex3[::-1]
                 sum_dist = np.asarray(sum_dist)
-#                fet2 = DiversityFetch2(candidate_fet2, tempcluster[0], sum_dist, interd1, dth, round(fetchSize*0.5))
-                fet2 = tempcluster[0][candidate_fet2[sortIndex3[:int(round(fetchSize*0.5))]]]
-                fet2 = fet2.astype(int)
+                fet2 = DiversityFetch2(candidate_fet2, tempcluster[0], sum_dist, interd1, dth, round(fetchSize*0.5))
+#                fet2 = tempcluster[0][candidate_fet2[sortIndex3[:int(round(fetchSize*0.5))]]]
+#                fet2 = fet2.astype(int)
                 FetchIndex = np.append(FetchIndex,fet1)
                 FetchIndex = np.append(FetchIndex,fet2)  
         sample_index = np.arange(0, np.shape(AccSample)[0])
@@ -886,8 +885,8 @@ if __name__ == '__main__':
         Result2[str(label_ratiovalues[it])] = temp_result2 
 
     print("-----------------Results-------------------")
-    print("Results for KNN:", Result1)
-    print("Results for SVM:", Result2)
+    print("Results for KNN from 5% to 30%:", Result1)
+    print("Results for SVM from 5% to 30%:", Result2)
     end = time.time()
     ExecutionTime = end - start
     print('The total Extection Time: ' + str(ExecutionTime))
