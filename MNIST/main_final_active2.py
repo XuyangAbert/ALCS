@@ -146,15 +146,12 @@ def CCA(sample,stdData,Dist):
         den1 = []
         den2 = []
         for i in range(N-1):
-            
             Diff = np.power(Dist[i,:],2)
             temp1 = np.power(np.exp(-Diff/stdData),gamma*m)
             temp2 = np.power(np.exp(-Diff/stdData),gamma*(m+1))
             den1.append(np.sum(temp1))
             den2.append(np.sum(temp2))
-
         y = np.corrcoef(den1,den2)[0,1]
-        
         if y > ep:
             break
         m = m + 1
@@ -181,29 +178,20 @@ def DCCA(sample,stdData,P_Summary,gamma,dim):
     Dist = Distance_Cal(temp)
     while 1:
         gam2 = gam1 + 5
-        den1 = []
-        den2 = []
+        den1, den2 = [], []
         for i in range(N):
             Diff = np.power(Dist[i,0:N1],2)
             temp1 = np.power(np.exp(-Diff/stdData),gam1)
             temp2 = np.power(np.exp(-Diff/stdData),gam2)
-            sum1 = np.sum(temp1)
-            sum2 = np.sum(temp2)
+            sum1, sum2 = np.sum(temp1), np.sum(temp2)
             if i<N1:
-                T1 = 0
-                T2 = 0
+                T1, T2 = 0, 0
                 for j in range(N2):
                     T1 += P_F[j]**(gam1/gamma)
                     T2 += P_F[j]**(gam2/gamma)
-                s1 = sum1 + T1
-                s2 = sum2 + T2
-#                s1 = sum1**(gam1/gamma) + T1
-#                s2 = sum2**(gam2/gamma) + T2
+                s1, s2 = sum1 + T1, sum2 + T2
             else:
-#                s1 = sum1**(gam1/gamma) + P_F[i-N1]**(gam1/gamma)
-#                s2 = sum2**(gam2/gamma) + P_F[i-N1]**(gam2/gamma)
-                s1 = sum1 + P_F[i-N1]**(gam1/gamma)
-                s2 = sum2 + P_F[i-N1]**(gam2/gamma)
+                s1, s2 = sum1 + P_F[i-N1]**(gam1/gamma), sum2 + P_F[i-N1]**(gam2/gamma)
             den1.append(s1)
             den2.append(s2)
         y = np.corrcoef(den1,den2)[0,1]
@@ -228,35 +216,19 @@ def TPC_Search(Dist,Pop_Index,Pop,radius,fitness):
         #-------------Search for the local maximum-----------------#
         SortIndice = np.argsort(fitness)
         NewIndice = SortIndice[::-1]
-        
-        
         Pop = Pop[NewIndice,:]
         fitness = fitness[NewIndice]
         OriginalIndice = OriginalIndice[NewIndice]
-        
-#        PeakIndices.append(NewIndice[0])
-        
         P.append(Pop[0,:])
         P_fitness.append(fitness[0])
-        
         PeakIndices.append(np.where(OriFit==fitness[0])[0][0])
-            
-#        P_fitness.append(fitness[0])
         P_Indice = OriginalIndice[0]
-        
         Ind = AssigntoPeaks(Pop,Pop_Index,P,P_Indice,marked,radius,Dist)
-        
         marked.append(Ind)
         marked.append(NewIndice[0])
-        
-        
-        
         if not Ind:
             Ind = [NewIndice[0]]
-            
         TPC_Indice[Ind] = PeakIndices[i]
-#        TPC_Indice[Ind] = P_Indice
-        
         co.append(len(Ind))
         TempFit = fitness
         sum1 = 0
@@ -267,15 +239,10 @@ def TPC_Search(Dist,Pop_Index,Pop,radius,fitness):
         fitness = TempFit
         i = i + 1
         if np.sum(co)>=N:
-#            PeakIndices = np.unique(PeakIndices)
-#            P = sample[PeakIndices][:]
             P = np.asarray(P)
-#            P_fitness = fitness[PeakIndices]
             P_fitness = np.asarray(P_fitness)
             TPC_Indice = Close_Clusters(pop,PeakIndices,Dist)
-            break
-        
-           
+            break       
     return P,P_fitness,TPC_Indice,PeakIndices
 
 def Boundary_Instance(Current,Neighbor,Dist,TPC_Indice,sample):
@@ -324,15 +291,9 @@ def MergeInChunk(P,P_fitness,sample,gamma,stdData,Dist,TPC_Indice,PeakIndices):
             if MinIndice <= Nc:
                 MinIndice = int(MinIndice)
                 Merge = True
-#                Neighbor = PeakIndices[MinIndice]
-#                Current = PeakIndices[i]
                 Neighbor = P[MinIndice][:]
                 X = (Neighbor + P[i,:])/2
-                
-#                X = Boundary_Instance(Current,Neighbor,Dist,TPC_Indice,sample)
-                    
                 X = np.reshape(X,(1,np.shape(P)[1]))
-                    
                 fitX = Fitness_Cal(sample,X,stdData,gamma)
                 fitP = P_fitness[i]
                 fitN = P_fitness[MinIndice]
@@ -363,70 +324,7 @@ def MergeInChunk(P,P_fitness,sample,gamma,stdData,Dist,TPC_Indice,PeakIndices):
     NewP_fitness = np.asarray(NewP_fitness)
     return NewP,NewP_fitness
 
-#def MergeInChunk(P,P_fitness,sample,gamma,stdData):
-#    """Perform the Merge of TPCs witnin each data chunk
-#    """
-#    # Num of TPCs
-#    [Nc,dim] = np.shape(P)
-#    NewP = []
-#    NewP_fitness = []
-#    marked= []
-#    unmarked= []
-#    Com = []
-#    
-#    # Num of TPCs
-#    Nc = np.shape(P)[0]
-#    for i in range(Nc):
-#        MinDist = np.inf
-#        MinIndice = 100000
-#        if i not in marked:
-#            for j in range(Nc):
-#                if j!=i and j not in marked:
-#                    d = np.linalg.norm(P[j,:]-P[i,:])
-#                    if d < MinDist:
-#                        MinDist = d
-#                        MinIndice = j
-#            if MinIndice <= Nc:
-#                MinIndice = int(MinIndice)
-#                Merge = True
-#                Neighbor = P[MinIndice][:]
-#                X = (Neighbor + P[i,:])/2
-#                    
-#                X = np.reshape(X,(1,np.shape(P)[1]))
-#                    
-#                fitX = Fitness_Cal(sample,X,stdData,gamma)
-#                fitP = P_fitness[i]
-#                fitN = P_fitness[MinIndice]
-#                if fitX < 1*min(fitN,fitP):
-#                    Merge = False
-#                if Merge:
-#                    Com.append([i,MinIndice])
-#                    marked.append(MinIndice)
-#                    marked.append(i)
-#                else:
-#                    unmarked.append(i)
-#    Com = np.asarray(Com)
-#    # Number of Possible Merges:
-#    Nm = np.shape(Com)[0]
-#    for k in range(Nm):
-#        if P_fitness[Com[k,0]] >= P_fitness[Com[k,1]]:
-#            NewP.append(P[Com[k,0],:])
-#            NewP_fitness.append(P_fitness[Com[k,0]])
-#        else:
-#            NewP.append(P[Com[k,1],:])
-#            NewP_fitness.append(P_fitness[Com[k,1]])
-#    # Add Unmerged TPCs to the NewP
-#    for n in range(Nc):
-#        if n not in Com:
-#            NewP.append(P[n,:])
-#            NewP_fitness.append(P_fitness[n])
-#    NewP = np.asarray(NewP)
-#    NewP_fitness = np.asarray(NewP_fitness)
-#    return NewP,NewP_fitness
-
 def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
-    """Perform the Merge of Clusters Between Historical and New Clusters
-    """
     # Num of TPCs
     [Nc,dim] = np.shape(P)
     NewP = []
@@ -434,8 +332,6 @@ def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
     marked= []
     unmarked= []
     Com = []
-    
-    
     for i in range(Nc):
         MinDist = np.inf
         MinIndice = 100000
@@ -487,7 +383,6 @@ def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
 def CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices):
     while 1:
         HistP = P
-#        HistPF = P_fitness
         P,P_fitness = MergeInChunk(P,P_fitness,sample,gamma,stdData,Dist,TPC_Indice,PeakIndices)
         if np.shape(P)[0] == np.shape(HistP)[0]:
             break
