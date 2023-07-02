@@ -577,8 +577,8 @@ def fps_clustering():
          PF = np.asarray(P_fitness) 
       P_Summary = ClusterSummary(P,PF,P_Summary,sample)
       PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
-      [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
-      return AccSample, P, ClusterIndices
+   [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
+   return AccSample, P, ClusterIndices
 
 def DiversityFetch1(candidate_fet1, current, priority1, interd1, dth, fetchsize):
     fetch1 = []
@@ -671,53 +671,51 @@ if __name__ == '__main__':
     Result1, Result2 = {}, {}
     AccSample, P, ClusterIndices = fps_clustering()
     for it in range(len(label_ratiovalues)):
-        label_ratio = label_ratiovalues[it]
-        sample_size = np.shape(AccSample)[0]
-        label_budget = round(label_ratio*sample_size)
-        samples = AccSample
-        query_indices = active_query(AccSample, P, ClusterIndice, label_budget)
-        FetchIndex = query_indices.astype(int)
+       label_ratio = label_ratiovalues[it]
+       sample_size = np.shape(AccSample)[0]
+       label_budget = round(label_ratio*sample_size)
+       samples = AccSample
+       query_indices = active_query(AccSample, P, ClusterIndice, label_budget)
+       FetchIndex = query_indices.astype(int)
         
        sample_index = np.arange(0, np.shape(AccSample)[0])
-        sample_index = sample_index.astype(int)
-        FetchIndex = FetchIndex.astype(int)
-        for s_idx in sample_index:
-            if s_idx not in FetchIndex:
-                UnlabeledIndex = np.append(UnlabeledIndex,s_idx)
-        UnlabeledIndex = UnlabeledIndex.astype(int)
-        sample_Fetch = AccSample[FetchIndex][:]
-        sample_Unlabeled = AccSample[UnlabeledIndex][:]
+       sample_index = sample_index.astype(int)
+       FetchIndex = FetchIndex.astype(int)
+       for s_idx in sample_index:
+          if s_idx not in FetchIndex:
+             UnlabeledIndex = np.append(UnlabeledIndex,s_idx)
+       UnlabeledIndex = UnlabeledIndex.astype(int)
+       sample_Fetch = AccSample[FetchIndex][:]
+       sample_Unlabeled = AccSample[UnlabeledIndex][:]
         
-        label_Fetch = label[FetchIndex]
-        label_Unlabeled = label[UnlabeledIndex]
-        new_fetchX = sample_Fetch
-        new_fetchY = label_Fetch
-        clf1 = KNeighborsClassifier(n_neighbors=3)
-        clf3 = LinearSVC()
-    
-        clf1 = clf1.fit(new_fetchX, new_fetchY)
-        clf3 = clf3.fit(new_fetchX, new_fetchY)
-    
-        pred_label1 = clf1.predict(sample_Unlabeled)
-        pred_label3 = clf3.predict(sample_Unlabeled)
-    
-        Acc1 = clf1.score(sample_Unlabeled, label_Unlabeled)
-        Acc3 = clf3.score(sample_Unlabeled, label_Unlabeled)
-    
-        F1_1 = f1_score(label_Unlabeled, pred_label1, average='macro')
-        F1_3 = f1_score(label_Unlabeled, pred_label3, average='macro')
-    
-        P1_1 = precision_score(label_Unlabeled, pred_label1, average='macro')
-        P1_3 = precision_score(label_Unlabeled, pred_label3, average='macro')
-    
-        R1_1 = recall_score(label_Unlabeled, pred_label1, average='macro')
-        R1_3 = recall_score(label_Unlabeled, pred_label3, average='macro')
+       label_Fetch = label[FetchIndex]
+       label_Unlabeled = label[UnlabeledIndex]
+       new_fetchX = sample_Fetch
+       new_fetchY = label_Fetch
+       clf1 = KNeighborsClassifier(n_neighbors=3)
+       clf3 = LinearSVC()
+       
+       clf1 = clf1.fit(new_fetchX, new_fetchY)
+       clf3 = clf3.fit(new_fetchX, new_fetchY)
         
-        temp_result1 = [Acc1,F1_1,P1_1,R1_1]
-        temp_result2 = [Acc3,F1_3,P1_3,R1_3]
+       pred_label1 = clf1.predict(sample_Unlabeled)
+       pred_label3 = clf3.predict(sample_Unlabeled)
+       
+       Acc1 = clf1.score(sample_Unlabeled, label_Unlabeled)
+       Acc3 = clf3.score(sample_Unlabeled, label_Unlabeled)
+       F1_1 = f1_score(label_Unlabeled, pred_label1, average='macro')
+       F1_3 = f1_score(label_Unlabeled, pred_label3, average='macro')
+       P1_1 = precision_score(label_Unlabeled, pred_label1, average='macro')
+       P1_3 = precision_score(label_Unlabeled, pred_label3, average='macro')
+
+       R1_1 = recall_score(label_Unlabeled, pred_label1, average='macro')
+       R1_3 = recall_score(label_Unlabeled, pred_label3, average='macro')
         
-        Result1[str(label_ratiovalues[it])] = temp_result1
-        Result2[str(label_ratiovalues[it])] = temp_result2 
+       temp_result1 = [Acc1,F1_1,P1_1,R1_1]
+       temp_result2 = [Acc3,F1_3,P1_3,R1_3]
+        
+       Result1[str(label_ratiovalues[it])] = temp_result1
+       Result2[str(label_ratiovalues[it])] = temp_result2 
 
     print("-----------------Results-------------------")
     print("Results for KNN from 5% to 30%:", Result1)
