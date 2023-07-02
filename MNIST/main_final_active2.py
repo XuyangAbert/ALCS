@@ -114,7 +114,7 @@ def PopInitial(sample,PreMu,PreStd,Buffersize):
     
     return [stdData,pop_Index,pop,radius,PreMu,PreStd]
 
-def UpdateMean(PreMy,meanData,BufferSize):
+def UpdateMean(PreMu,meanData,BufferSize):
     # Num of the processed data chunk
     t_P = len(PreMu)
     # Update the mean of the data stream as new data chunk arrives
@@ -241,7 +241,7 @@ def TPC_Search(Dist,Pop_Index,Pop,radius,fitness):
         if np.sum(co)>=N:
             P = np.asarray(P)
             P_fitness = np.asarray(P_fitness)
-            TPC_Indice = Close_Clusters(pop,PeakIndices,Dist)
+            TPC_Indice = Close_Clusters(Pop,PeakIndices,Dist)
             break       
     return P,P_fitness,TPC_Indice,PeakIndices
 
@@ -324,7 +324,7 @@ def MergeInChunk(P,P_fitness,sample,gamma,stdData,Dist,TPC_Indice,PeakIndices):
     NewP_fitness = np.asarray(NewP_fitness)
     return NewP,NewP_fitness
 
-def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
+def MergeOnline(P,P_fitness,P_Summary,PreStd,sample,gamma,stdData):
     # Num of TPCs
     [Nc,dim] = np.shape(P)
     NewP = []
@@ -343,8 +343,6 @@ def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
                         MinDist = d
                         MinIndice = j
             if MinIndice < Nc:
-
-#                MinIndice = int(MinIndice)
                 Merge = True
                 Neighbor = P[MinIndice][:]
                 X = (Neighbor + P[i][:])/2
@@ -578,7 +576,7 @@ def fps_clustering():
       P_Summary = ClusterSummary(P,PF,P_Summary,sample)
       PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
    [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
-   return AccSample, P, ClusterIndices
+   return AccSample, P, ClusterIndice, data, label
 
 def DiversityFetch1(candidate_fet1, current, priority1, interd1, dth, fetchsize):
     fetch1 = []
@@ -613,63 +611,59 @@ def DiversityFetch2(candidate_fet2, current, priority2, interd1, dth, fetchsize)
     return fetch2    
 
 def active_query(samples, cluster_centers, cluster_idx, label_budget):
-  query_idx = []
-  dist_cluster = squareform(pdist(cluster_centers))
-
-  for i in range(np.shape(cluster_centers)[0]):
-    curr_cluster = np.where(cluster_idx==i)[0]
-    curr_dist = squareform(pdist(samples[curr_cluster]))
-    num_queries = round(label_budget * len(curr_dist) / np.shape(samples)[0])
-    num_nei = round(len(curr_cluster)**0.5)
-    knei_dist, query_priority = [], []
-    temp_interdist = dist_cluster[i,:]
-    if len(curr_cluster)<2:
-      continue
-    temp_neigh1 = cluster_centers[np.argsort(temp_interdist)[0],:]
-    temp_neigh2 = cluster_centers[np.argsort(temp_interdist)[1],:]
-    for j in range(len(curr_cluster)):
-        query_priority.append(1+exp(-np.linalg.norm(samples[curr_cluster[j],:]-cluster_centers[i,:])))
-        knei_dist.append(np.mean(curr_dist[j,:num_nei]))
-    sortIndex1 = np.argsort(query_priority)
-    sortIndex1 = sortIndex1[::-1]
-    dth = np.mean(knei_dist)
-    query_priority = np.array(query_priority)
-    fet1 = DiversityFetch1(sortIndex1[:round(len(query_priority)/2)],
-                           curr_cluster,
-                           query_priority[sortIndex1[:round(len(query_priority)/2)]],
-                           curr_dist, dth, round(num_queries*0.5))
-
-
-    fil_index = sortIndex1[-int(round(len(query_priority)/2)):]
-    d2 = []
-    for k in range(len(fil_index)):
-        temp_d1 = np.linalg.norm(samples[curr_cluster[fil_index[k]],:]-temp_neigh1)
-        temp_d2 = np.linalg.norm(samples[curr_cluster[fil_index[k]],:]-temp_neigh2)
-        temp_ratio1 = max(temp_d1,temp_d2)/min(temp_d1,temp_d2)
-        d2.append(temp_ratio1)
-    sortIndex2 = np.argsort(d2)
-    candidate_fet2 = fil_index[sortIndex2[:int(round(num_queries*0.8))]]
-    sum_dist = []
-    for ii in range(len(candidate_fet2)):
-        candidate_d1=np.linalg.norm(samples[curr_cluster[candidate_fet2[ii]],:]-temp_neigh1)
-        candidate_d2=np.linalg.norm(samples[curr_cluster[candidate_fet2[ii]],:]-temp_neigh1)
-        sum_dist.append(1+1/(1+candidate_d1+candidate_d2))
-
-    sortIndex3 = np.argsort(sum_dist)
-    sortIndex3 = sortIndex3[::-1]
-    sum_dist = np.array(sum_dist)
-    fet2 = DiversityFetch2(candidate_fet2, curr_cluster,
-                           sum_dist, curr_dist, dth,
-                           round(num_queries*0.5))
-    query_idx = np.append(query_idx,fet1)
-    query_idx = np.append(query_idx,fet2)
-  return query_idx
+    query_idx = []
+    dist_cluster = squareform(pdist(cluster_centers))
+    for i in range(np.shape(cluster_centers)[0]):
+        curr_cluster = np.where(cluster_idx == i)[0]
+        curr_dist = squareform(pdist(samples[curr_cluster]))
+        num_queries = round(label_budget * len(curr_dist) / np.shape(samples)[0])
+        num_nei = 5  # round(len(curr_cluster)**0.5)
+        knei_dist, query_priority = [], []
+        temp_interdist = dist_cluster[i, :]
+        if len(curr_cluster) < 2:
+            continue
+        temp_neigh1 = cluster_centers[np.argsort(temp_interdist)[0], :]
+        temp_neigh2 = cluster_centers[np.argsort(temp_interdist)[1], :]
+        for j in range(len(curr_cluster)):
+            query_priority.append(1 + exp(-np.linalg.norm(samples[curr_cluster[j], :] - cluster_centers[i, :])))
+            knei_dist.append(np.mean(curr_dist[j, :num_nei]))
+        sortIndex1 = np.argsort(query_priority)
+        sortIndex1 = sortIndex1[::-1]
+        dth = np.mean(knei_dist)
+        query_priority = np.array(query_priority)
+        fet1 = DiversityFetch1(sortIndex1[:round(len(query_priority) / 2)],
+                               curr_cluster,
+                               query_priority[sortIndex1[:round(len(query_priority) / 2)]],
+                               curr_dist, dth, round(num_queries * 0.5))
+        fil_index = sortIndex1[-int(round(len(query_priority) / 2)):]
+        d2 = []
+        for k in range(len(fil_index)):
+            temp_d1 = np.linalg.norm(samples[curr_cluster[fil_index[k]], :] - temp_neigh1)
+            temp_d2 = np.linalg.norm(samples[curr_cluster[fil_index[k]], :] - temp_neigh2)
+            temp_ratio1 = max(temp_d1, temp_d2) / min(temp_d1, temp_d2)
+            d2.append(temp_ratio1)
+        sortIndex2 = np.argsort(d2)
+        candidate_fet2 = fil_index[sortIndex2[:int(round(num_queries * 0.8))]]
+        sum_dist = []
+        for ii in range(len(candidate_fet2)):
+            candidate_d1 = np.linalg.norm(samples[curr_cluster[candidate_fet2[ii]], :] - temp_neigh1)
+            candidate_d2 = np.linalg.norm(samples[curr_cluster[candidate_fet2[ii]], :] - temp_neigh1)
+            sum_dist.append(1 + 1 / (1 + candidate_d1 + candidate_d2))
+        sortIndex3 = np.argsort(sum_dist)
+        sortIndex3 = sortIndex3[::-1]
+        sum_dist = np.array(sum_dist)
+        fet2 = DiversityFetch2(candidate_fet2, curr_cluster,
+                               sum_dist, curr_dist, dth,
+                               round(num_queries * 0.5))
+        query_idx = np.append(query_idx, fet1)
+        query_idx = np.append(query_idx, fet2)
+    return query_idx
 
 #---------------------------Main Function-------------------------#
 if __name__ == '__main__':
     label_ratiovalues = [0.10, 0.15]
     Result1, Result2 = {}, {}
-    AccSample, P, ClusterIndices = fps_clustering()
+    AccSample, P, ClusterIndice, data, label = fps_clustering()
     for it in range(len(label_ratiovalues)):
        label_ratio = label_ratiovalues[it]
        sample_size = np.shape(AccSample)[0]
