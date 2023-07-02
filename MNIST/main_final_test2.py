@@ -805,11 +805,8 @@ if __name__ == '__main__':
         Dist = Distance_Cal(sample)
         if PreStd:
             if PreStd[len(PreStd)-1] > stdData:
-                
                 P = P_Summary[:,0:dim]
-                
                 localFit = Fitness_Cal(sample,P,stdData,gamma)
-                
                 PF = fitness_update(P_Summary,P,localFit,PreStd,gamma,stdData)
                 P_Summary = ClusterSummary(P,PF,P_Summary,sample)
                 PFS.append(PF)
@@ -817,57 +814,28 @@ if __name__ == '__main__':
                 clustercenter = P
                 [Assign,clusterindex] = Cluster_Assign(AccSample,P)
                 continue
-#            gam = gamma
-#            gamma = DCCA(sample,stdData,P_Summary,gam,dim)
-
         else:
             gamma = CCA(sample,stdData,Dist)
             
         gammaHist.append(gamma)
-#        gamma = 20
-        
         fitness = Fitness_Cal(sample,pop,stdData,gamma)
         fitness = np.array(fitness)
-        
         P, P_fitness, TPC_Indice, PeakIndices = TPC_Search(Dist,pop_index,pop,radius,fitness)
-        
-        
         P, P_fitness = CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices)
-        
-        
-#        P = ClusterValidation(sample,P)
-        
         P_fitness = Fitness_Cal(sample,P,stdData,gamma)
         P_fitness = fitness_update(P_Summary,P,P_fitness,PreStd,gamma,stdData)
         
-#        print('Error 2')
-        
-        print(t)
-        
-#        center_label = center_labelfetch(sample,P,sample_label)
-#        P_Summary = ClusterSummary(P,PF,P_Summary,sample,sample_label)
-        
         if t == 0:
             P = P
-#            Rp = AverageDist(P, P_Summary, sample, dim)
             PF = np.asarray(P_fitness)
         else:
             P,P_fitness = CE_Online(sample,P_Summary,P,P_fitness,stdData,gamma,PreStd)
             PF = np.asarray(P_fitness)
-        
-#        if PFS:
-#            [P,PF] = check(P_Summary,P,PF,PFS)
-        
         P_Summary = ClusterSummary(P,PF,P_Summary,sample)
-        
         PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
-        
-#        [MinDist,ClusterIndice] = Cluster_Assign(sample,P)
-    
     [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
     
     num_S = 7000
-    
     FetchIndex = []
     UnlabeledIndex = []
     
@@ -884,7 +852,6 @@ if __name__ == '__main__':
 
         for j in range(len(tempcluster[0])):
             d1.append(np.linalg.norm(AccSample[tempcluster[0][j],:]-P[i,:]))
-#            d2.append(np.linalg.norm(AccSample[tempcluster[0][j],:]-P[i,:]))
         fetchSize = num_S * len(d1)/np.shape(AccSample)[0]
         sortIndex1 = np.argsort(d1)
         fet1 = tempcluster[0][sortIndex1[:round(fetchSize*0.5)]]
@@ -896,12 +863,9 @@ if __name__ == '__main__':
         for k in range(len(fil_index)):
             temp_d1 = np.linalg.norm(AccSample[tempcluster[0][fil_index[k]],:]-temp_neigh1)
             temp_d2 = np.linalg.norm(AccSample[tempcluster[0][fil_index[k]],:]-temp_neigh2)
-            
             temp_ratio1 = max(temp_d1,temp_d2)/min(temp_d1,temp_d2)
-#            temp_ratio2 = (temp_d1+temp_d2)/np.linalg.norm(temp_neigh1-temp_neigh2)
             
             d2.append(temp_ratio1) #/temp_ratio2)
-#            d2.append(temp_d2)
         
         sortIndex2 = np.argsort(d2)
         candidate_fet2 = fil_index[sortIndex2[:round(fetchSize*0.8)]]
@@ -912,15 +876,10 @@ if __name__ == '__main__':
             sum_dist.append(candidate_d1+candidate_d2)
         
         sortIndex3 = np.argsort(sum_dist)
-
-#        fet2 = tempcluster[0][fil_index[sortIndex2[:round(fetchSize*0.5)]]]
         fet2 = tempcluster[0][candidate_fet2[sortIndex3[:round(fetchSize*0.5)]]]
-        
         fet2 = fet2.astype(int)
-#        FetchIndex = np.append(FetchIndex,tempcluster[0][sortIndex[:round(fetchSize*1)]])
         FetchIndex = np.append(FetchIndex,fet1)
-        FetchIndex = np.append(FetchIndex,fet2)  
-#        UnlabeledIndex = np.append(UnlabeledIndex,tempcluster[0][round(fetchSize):])
+        FetchIndex = np.append(FetchIndex,fet2)
         UnlabeledIndex = np.append(UnlabeledIndex,tempcluster[0][sortIndex1[round(fetchSize*0.5):round(len(d1)/2)]])
         UnlabeledIndex = np.append(UnlabeledIndex,tempcluster[0][fil_index[sortIndex2[round(fetchSize*0.5):len(d2)]]])
 
@@ -932,16 +891,6 @@ if __name__ == '__main__':
     
     label_Fetch = label[FetchIndex]
     label_Unlabeled = label[UnlabeledIndex]
-    
-#    reprsentative_power = Post_Sampling(sample_Fetch,label[FetchIndex],5)
-#    
-#    sort_idx2 = np.argsort(reprsentative_power)
-#    
-#    reverse_idx = sort_idx2[::-1]
-#    
-#    new_fetchX = sample_Fetch[reverse_idx[:round(len(FetchIndex)*0.85)]][:]
-#    new_fetchY = label_Fetch[reverse_idx[:round(len(FetchIndex)*0.85)]]
-    
     new_fetchX = sample_Fetch
     new_fetchY = label_Fetch
 
@@ -973,41 +922,10 @@ if __name__ == '__main__':
     R1_2 = recall_score(label_Unlabeled, pred_label2, average='macro')
     R1_3 = recall_score(label_Unlabeled, pred_label3, average='macro')
 
-    # AUC1 = auc(label_Unlabeled, pred_label1)
-    # AUC2 = auc(label_Unlabeled, pred_label2)
-    # AUC3 = auc(label_Unlabeled, pred_label3)
-
     print('Accuracy:', Acc1, Acc2, Acc3)
-
     print('F-measures:', F1_1, F1_2, F1_3)
-
     print('Precision:', P1_1, P1_2, P1_3)
-
     print('Recall:', R1_1, R1_2, R1_3)
-
-    # print('AUC:', AUC1, AUC2, AUC3)
-
     end = time.time()
     ExecutionTime = end - start
-    print('The total Extection Time: ' + str(ExecutionTime))
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    
+    print('The total Extection Time: ' + str(ExecutionTime)) 
