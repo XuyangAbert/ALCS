@@ -453,7 +453,6 @@ def AverageDist(P, P_Summary, sample, dim):
     rad1 = []
     # if the summary of clusters is not empty
     if len(P_Summary)>0:
-        
         PreP = P_Summary[:,0:dim] # Hstorical Cluster Center vector
         PreR = P_Summary[:,dim+1]
         for i in range(np.shape(P)[0]):
@@ -500,8 +499,7 @@ def Close_Clusters(pop,PeakIndices,Dist):
         temp_dist = Dist[i][PeakIndices]
         C_Indices[i] = PeakIndices[np.argmin(temp_dist)]
     return C_Indices
-        
-
+   
 def Cluster_Assign(sample,P):
     # Number of samples
     N = np.shape(sample)[0]
@@ -525,6 +523,62 @@ def Cluster_Assign(sample,P):
     MinDist = np.asarray(MinDist)
     MinIndice = np.asarray(MinIndice)
     return MinDist,MinIndice 
+
+def fps_clustering():
+   [data,label] = Input()
+   [BufferSize,P_Summary,T,PFS,PreStd] = ParamSpe(data)
+   T = int(T)
+   gammaHist = []
+   PFS = []
+   PreMu = []
+   for t in range(T):
+      if t < T-1:
+         sample = data[t*BufferSize:(t+1)*BufferSize,:]
+      else:
+         sample = data[t*BufferSize:np.shape(data)[0]]
+      if t==0:
+         AccSample = sample
+      else:
+         AccSample = np.concatenate([AccSample,sample])   
+      dim = np.shape(sample)[1]
+      [stdData,pop_index,pop,radius,PreMu,PreStd] = PopInitial(sample,PreMu,PreStd,BufferSize)
+      # Initialize the fitness vector
+      fitness = np.zeros((len(pop_index),1))
+      # Initialize the indices vector
+      indices = np.zeros((len(pop_index),1))
+      Dist = Distance_Cal(sample)
+      if PreStd:
+         if PreStd[len(PreStd)-1] > stdData:
+            P = P_Summary[:,0:dim]
+            localFit = Fitness_Cal(sample,P,stdData,gamma)
+            PF = fitness_update(P_Summary,P,localFit,PreStd,gamma,stdData)
+            P_Summary = ClusterSummary(P,PF,P_Summary,sample)
+            PFS.append(PF)
+            PreStd.append(stdData)
+            clustercenter = P
+            [Assign,clusterindex] = Cluster_Assign(AccSample,P)
+            continue
+      else:
+         gamma = CCA(sample,stdData,Dist)
+      gammaHist.append(gamma)
+      fitness = Fitness_Cal(sample,pop,stdData,gamma)
+      fitness = np.array(fitness)
+      P, P_fitness, TPC_Indice, PeakIndices = TPC_Search(Dist,pop_index,pop,radius,fitness)
+      P, P_fitness = CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices)
+      
+      P_fitness = Fitness_Cal(sample,P,stdData,gamma)
+      P_fitness = fitness_update(P_Summary,P,P_fitness,PreStd,gamma,stdData)
+      
+      if t == 0:
+         P = P
+         PF = np.asarray(P_fitness)
+      else:
+         P,P_fitness = CE_Online(sample,P_Summary,P,P_fitness,stdData,gamma,PreStd)
+         PF = np.asarray(P_fitness) 
+      P_Summary = ClusterSummary(P,PF,P_Summary,sample)
+      PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
+      [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
+      return AccSample, P, ClusterIndices
 
 def DiversityFetch1(candidate_fet1, current, priority1, interd1, dth, fetchsize):
     fetch1 = []
@@ -569,10 +623,8 @@ def active_query(samples, cluster_centers, cluster_idx, label_budget):
     num_nei = round(len(curr_cluster)**0.5)
     knei_dist, query_priority = [], []
     temp_interdist = dist_cluster[i,:]
-
     if len(curr_cluster)<2:
       continue
-
     temp_neigh1 = cluster_centers[np.argsort(temp_interdist)[0],:]
     temp_neigh2 = cluster_centers[np.argsort(temp_interdist)[1],:]
     for j in range(len(curr_cluster)):
@@ -615,68 +667,9 @@ def active_query(samples, cluster_centers, cluster_idx, label_budget):
 
 #---------------------------Main Function-------------------------#
 if __name__ == '__main__':
-    [data,label] = Input()
-    
-    label_ratiovalues = [0.10]
-    Result1 = {}
-    Result2 = {}
-    
-    [BufferSize,P_Summary,T,PFS,PreStd] = ParamSpe(data)
-    T = int(T)
-    gammaHist = []
-    PFS = []
-    PreMu = []
-    for t in range(T):
-        if t < T-1:
-            sample = data[t*BufferSize:(t+1)*BufferSize,:]
-        else:
-            sample = data[t*BufferSize:np.shape(data)[0]]
-        if t==0:
-            AccSample = sample
-        else:
-            AccSample = np.concatenate([AccSample,sample])
-            
-        dim = np.shape(sample)[1]
-        [stdData,pop_index,pop,radius,PreMu,PreStd] = PopInitial(sample,PreMu,PreStd,BufferSize)
-        # Initialize the fitness vector
-        fitness = np.zeros((len(pop_index),1))
-        # Initialize the indices vector
-        indices = np.zeros((len(pop_index),1))
-        Dist = Distance_Cal(sample)
-        if PreStd:
-            if PreStd[len(PreStd)-1] > stdData:
-                P = P_Summary[:,0:dim]
-                localFit = Fitness_Cal(sample,P,stdData,gamma)
-                PF = fitness_update(P_Summary,P,localFit,PreStd,gamma,stdData)
-                P_Summary = ClusterSummary(P,PF,P_Summary,sample)
-                PFS.append(PF)
-                PreStd.append(stdData)
-                clustercenter = P
-                [Assign,clusterindex] = Cluster_Assign(AccSample,P)
-                continue
-        else:
-            gamma = CCA(sample,stdData,Dist)
-                
-        gammaHist.append(gamma)
-        fitness = Fitness_Cal(sample,pop,stdData,gamma)
-        fitness = np.array(fitness)
-        P, P_fitness, TPC_Indice, PeakIndices = TPC_Search(Dist,pop_index,pop,radius,fitness)
-        P, P_fitness = CE_InChunk(sample,P,P_fitness,stdData,gamma,Dist,TPC_Indice,PeakIndices)
-            
-        P_fitness = Fitness_Cal(sample,P,stdData,gamma)
-        P_fitness = fitness_update(P_Summary,P,P_fitness,PreStd,gamma,stdData)
-            
-        if t == 0:
-            P = P
-            PF = np.asarray(P_fitness)
-        else:
-            P,P_fitness = CE_Online(sample,P_Summary,P,P_fitness,stdData,gamma,PreStd)
-            PF = np.asarray(P_fitness)
-            
-        P_Summary = ClusterSummary(P,PF,P_Summary,sample)
-        PreStd,PFS = StoreInf(PF,PFS,PreStd,stdData)
-        [MinDist,ClusterIndice] = Cluster_Assign(AccSample,P)
-    
+    label_ratiovalues = [0.10, 0.15]
+    Result1, Result2 = {}, {}
+    AccSample, P, ClusterIndices = fps_clustering()
     for it in range(len(label_ratiovalues)):
         label_ratio = label_ratiovalues[it]
         sample_size = np.shape(AccSample)[0]
@@ -684,7 +677,8 @@ if __name__ == '__main__':
         samples = AccSample
         query_indices = active_query(AccSample, P, ClusterIndice, label_budget)
         FetchIndex = query_indices.astype(int)
-        sample_index = np.arange(0, np.shape(AccSample)[0])
+        
+       sample_index = np.arange(0, np.shape(AccSample)[0])
         sample_index = sample_index.astype(int)
         FetchIndex = FetchIndex.astype(int)
         for s_idx in sample_index:
@@ -693,11 +687,11 @@ if __name__ == '__main__':
         UnlabeledIndex = UnlabeledIndex.astype(int)
         sample_Fetch = AccSample[FetchIndex][:]
         sample_Unlabeled = AccSample[UnlabeledIndex][:]
+        
         label_Fetch = label[FetchIndex]
         label_Unlabeled = label[UnlabeledIndex]
         new_fetchX = sample_Fetch
         new_fetchY = label_Fetch
-    
         clf1 = KNeighborsClassifier(n_neighbors=3)
         clf3 = LinearSVC()
     
@@ -731,24 +725,3 @@ if __name__ == '__main__':
     end = time.time()
     ExecutionTime = end - start
     print('The total Extection Time: ' + str(ExecutionTime))
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    
