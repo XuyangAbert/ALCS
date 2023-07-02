@@ -317,7 +317,7 @@ def MergeInChunk(P,P_fitness,sample,gamma,stdData,Dist,TPC_Indice,PeakIndices):
     NewP_fitness = np.asarray(NewP_fitness)
     return NewP,NewP_fitness
 
-def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
+def MergeOnline(P,P_fitness,P_Summary,PreStd,sample,gamma,stdData):
     """Perform the Merge of Clusters Between Historical and New Clusters
     """
     # Num of TPCs
@@ -340,8 +340,6 @@ def MergeOnline(P,P_fitness,P_summary,PreStd,sample,gamma,stdData):
                         MinDist = d
                         MinIndice = j
             if MinIndice < Nc:
-
-#                MinIndice = int(MinIndice)
                 Merge = True
                 Neighbor = P[MinIndice][:]
                 X = (Neighbor + P[i][:])/2
